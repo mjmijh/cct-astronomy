@@ -1,0 +1,26 @@
+apply_to_light:
+  name: Apply CCT to light (global)
+  description: >-
+    Applies the calculated CCT to one or more light entities (Kelvin or mired selected automatically)
+    with optional soft fade. If the automation switch for this entry is OFF, nothing is applied.
+  fields:
+    light_entity_id:
+      name: Light entity
+      required: true
+      selector:
+        entity:
+          domain: light
+          multiple: true
+    transition:
+      name: Transition (seconds)
+      description: >-
+        Fade duration in seconds. If not set, the value is chosen automatically based on the
+        current phase of day (night / dawn / day / dusk).
+      required: false
+      selector:
+        number:
+          min: 0
+          max: 600
+          step: 1
+          unit_of_measurement: s
+          mode: slider

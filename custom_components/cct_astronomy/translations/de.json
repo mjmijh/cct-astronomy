@@ -1,0 +1,46 @@
+{
+  "title": "Astronomisch geführte CCT",
+  "config": {
+    "step": {
+      "user": {
+        "title": "Astronomisch geführte CCT einrichten",
+        "description": "Berechnet eine CCT-Kurve aus astronomischen Zeiten basierend auf deinem Standort.",
+        "data": {
+          "name": "Instanzname (z.B. Podest, Foyer, Open Office)",
+          "enabled": "Automatik aktiv",
+          "mode": "Modus",
+          "k_min": "K_min [K]",
+          "k_max": "K_max [K]",
+          "twilight_deg": "Dämmerungswinkel |h_tw| [°]",
+          "zone_meridian": "Zeitzonen-Meridian λ₀ [°]",
+          "dim_default": "Standard-Helligkeit [%]",
+          "transition_night": "Übergangszeit Nacht [s]",
+          "transition_dawn": "Übergangszeit Morgendämmerung [s]",
+          "transition_day": "Übergangszeit Tag [s]",
+          "transition_dusk": "Übergangszeit Abenddämmerung [s]"
+        }
+      }
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "CCT & Automatik konfigurieren",
+        "description": "Astronomische CCT-Parameter und Übergangszeiten anpassen.",
+        "data": {
+          "enabled": "Automatik aktiv",
+          "mode": "Modus",
+          "k_min": "K_min [K]",
+          "k_max": "K_max [K]",
+          "twilight_deg": "Dämmerungswinkel |h_tw| [°]",
+          "zone_meridian": "Zeitzonen-Meridian λ₀ [°]",
+          "dim_default": "Standard-Helligkeit [%]",
+          "transition_night": "Übergangszeit Nacht [s]",
+          "transition_dawn": "Übergangszeit Morgendämmerung [s]",
+          "transition_day": "Übergangszeit Tag [s]",
+          "transition_dusk": "Übergangszeit Abenddämmerung [s]"
+        }
+      }
+    }
+  }
+}

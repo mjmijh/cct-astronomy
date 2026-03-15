@@ -1,0 +1,648 @@
+
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <title>Astronomically Guided CCT – Wochen-Sequenz</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    :root {
+      --bg: #f7f4ef;
+      --card: #ffffff;
+      --accent: #e48c2c;
+      --accent-soft: #f0c78a;
+      --text-main: #2b2b2b;
+      --text-soft: #666666;
+      --border-soft: #e0d7c8;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: radial-gradient(circle at top, #fbeedc 0, #f7f4ef 40%, #f2f0eb 100%);
+      color: var(--text-main);
+    }
+    .shell {
+      max-width: 1150px;
+      margin: 0 auto;
+      padding: 24px 16px 40px;
+    }
+    header { margin-bottom: 20px; }
+    h1 {
+      margin: 0;
+      font-size: 1.9rem;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+    .subtitle {
+      margin-top: 4px;
+      font-size: 0.9rem;
+      color: var(--text-soft);
+    }
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(0, 360px) minmax(0, 1fr);
+      gap: 18px;
+      align-items: flex-start;
+    }
+    .card {
+      background: var(--card);
+      border-radius: 18px;
+      padding: 16px 16px 18px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.04);
+      border: 1px solid var(--border-soft);
+    }
+    .card h2 {
+      margin: 0 0 10px;
+      font-size: 1.05rem;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: var(--text-soft);
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 10px 14px;
+      margin-top: 8px;
+    }
+    label {
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-soft);
+      display: block;
+      margin-bottom: 3px;
+    }
+    input, select {
+      width: 100%;
+      padding: 6px 8px;
+      border-radius: 999px;
+      border: 1px solid #d8cfc0;
+      font-size: 0.85rem;
+      outline: none;
+      background: #fdfbf8;
+    }
+    input:focus, select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 1px rgba(228,140,44,0.3);
+      background: #fff;
+    }
+    .radio-row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 4px;
+    }
+    .radio-pill {
+      border-radius: 999px;
+      border: 1px solid #d8cfc0;
+      padding: 4px 9px;
+      font-size: 0.8rem;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      background: #faf6f0;
+    }
+    .radio-pill input { width: auto; margin: 0; }
+    .radio-pill.active {
+      border-color: var(--accent);
+      background: #fff3e1;
+      color: var(--accent);
+    }
+    button {
+      margin-top: 8px;
+      padding: 7px 16px;
+      border-radius: 999px;
+      border: none;
+      font-size: 0.9rem;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      cursor: pointer;
+      background: linear-gradient(120deg, #e48c2c, #f0b35e);
+      color: white;
+      box-shadow: 0 6px 14px rgba(210,130,40,0.35);
+    }
+    button:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 8px 18px rgba(210,130,40,0.45);
+    }
+    .btn-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 6px;
+      align-items: center;
+    }
+    .btn-secondary {
+      background: #f6eee1;
+      color: #b26b18;
+      box-shadow: none;
+      border: 1px solid #e3d3be;
+    }
+    .btn-secondary:hover {
+      background: #fbead6;
+      box-shadow: none;
+    }
+    .times {
+      font-family: Menlo, Consolas, monospace;
+      font-size: 0.8rem;
+      white-space: pre-line;
+      background: #fdf7ee;
+      border-radius: 12px;
+      padding: 8px 10px;
+      border: 1px dashed #e0d1b8;
+      margin-top: 6px;
+    }
+    canvas { max-width: 100%; }
+    .hint {
+      font-size: 0.8rem;
+      color: var(--text-soft);
+      margin-top: 6px;
+    }
+    .pill-caption {
+      font-size: 0.75rem;
+      margin-top: 4px;
+      color: var(--text-soft);
+    }
+    .sequence-bar {
+      margin-top: 10px;
+      padding: 8px 10px;
+      border-radius: 12px;
+      background: #fdf7ee;
+      border: 1px solid #e7d7c3;
+      font-size: 0.8rem;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .seq-line-1 {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .seq-label-main {
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      font-size: 0.78rem;
+      color: #8b5a1d;
+    }
+    .seq-current-date {
+      font-family: Menlo, Consolas, monospace;
+      font-size: 0.8rem;
+    }
+    .seq-range {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .seq-range input[type="range"] {
+      flex: 1;
+    }
+    .seq-index-label {
+      font-size: 0.8rem;
+      color: var(--text-soft);
+      min-width: 90px;
+      text-align: right;
+    }
+    @media (max-width: 900px) {
+      .layout {
+        grid-template-columns: minmax(0, 1fr);
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <header>
+      <h1>Astronomically Guided CCT</h1>
+      <div class="subtitle">
+        Interaktive Wochen-Sequenz von Farbtemperatur und Sonnenhöhe
+      </div>
+    </header>
+
+    <div class="layout">
+      <div class="card">
+        <h2>Parameter</h2>
+        <div class="grid">
+          <div>
+            <label for="lat">Breite φ [°]</label>
+            <input id="lat" type="number" step="0.0001" value="52.52">
+          </div>
+          <div>
+            <label for="lon">Länge λ [°]</label>
+            <input id="lon" type="number" step="0.0001" value="13.405">
+          </div>
+          <div>
+            <label for="zoneMeridian">Zeitzonen-Meridian λ₀ [°]</label>
+            <input id="zoneMeridian" type="number" step="0.1" value="15">
+          </div>
+          <div>
+            <label for="dst">Sommerzeit</label>
+            <select id="dst">
+              <option value="0">0 h (Normalzeit)</option>
+              <option value="1" selected>1 h (Sommerzeit)</option>
+            </select>
+          </div>
+          <div>
+            <label for="twilight">Twilight |h_tw| [°]</label>
+            <input id="twilight" type="number" step="0.1" value="6">
+          </div>
+          <div>
+            <label for="date">Startdatum</label>
+            <input id="date" type="date">
+          </div>
+          <div>
+            <label for="weeksCount">Anzahl Wochen</label>
+            <input id="weeksCount" type="number" min="1" max="52" value="8">
+          </div>
+          <div>
+            <label for="kmin">K_min [K]</label>
+            <input id="kmin" type="number" value="2700">
+          </div>
+          <div>
+            <label for="kmax">K_max [K]</label>
+            <input id="kmax" type="number" value="5700">
+          </div>
+          <div>
+            <label>Nachtmodus</label>
+            <div class="radio-row" id="nightModeRow">
+              <label class="radio-pill">
+                <input type="radio" name="nightMode" value="max" checked>
+                Nacht = K_max
+              </label>
+              <label class="radio-pill">
+                <input type="radio" name="nightMode" value="min">
+                Nacht = K_min
+              </label>
+            </div>
+            <div class="pill-caption">
+              K_max: „kühles Mondlicht“ · K_min: „warm gedimmte Nacht“
+            </div>
+          </div>
+        </div>
+
+        <div class="btn-row">
+          <button id="runBtn">Wochen berechnen</button>
+          <button id="playBtn" class="btn-secondary">▶ Sequenz abspielen</button>
+        </div>
+
+        <div class="sequence-bar">
+          <div class="seq-line-1">
+            <div class="seq-label-main">Wochen-Sequenz</div>
+            <div class="seq-current-date" id="seqCurrentDate"></div>
+          </div>
+          <div class="seq-range">
+            <input id="weekSlider" type="range" min="0" max="0" value="0">
+            <div class="seq-index-label" id="seqIndexLabel">Woche 1 / 1</div>
+          </div>
+        </div>
+
+        <div class="times" id="timesOutput"></div>
+      </div>
+
+      <div class="card">
+        <h2>Tagesverlauf (Referenztag der Woche)</h2>
+        <canvas id="cctChart" height="130"></canvas>
+        <div class="hint">
+          Orange Linie: CCT(t) [K] · Helle Linie: Sonnenhöhe [°].<br>
+          Mit dem Slider blätterst du wochenweise durch das Jahr.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ----- Mathe-/Astronomie-Teil -----
+    function deg2rad(d){ return d * Math.PI / 180; }
+    function dayOfYear(date){
+      const start = new Date(date.getFullYear(), 0, 0);
+      return Math.floor((date - start) / (1000*60*60*24));
+    }
+    function solarDeclinationRad(N){
+      return -23.44 * Math.PI/180 * Math.cos((2*Math.PI/365)*(N+10));
+    }
+    function equationOfTimeMinutes(N){
+      const B = deg2rad((360/365)*(N-81));
+      return 9.87*Math.sin(2*B) - 7.53*Math.cos(B) - 1.5*Math.sin(B);
+    }
+    function hourAngleDeg(phi, delta, h){
+      let cosH = (Math.sin(h) - Math.sin(phi)*Math.sin(delta)) / (Math.cos(phi)*Math.cos(delta));
+      cosH = Math.max(-1, Math.min(1, cosH));
+      return (180/Math.PI)*Math.acos(cosH);
+    }
+    function solarTimes(date, lat, lon, zoneMeridian, dst=0, twilightDeg=6){
+      const N = dayOfYear(date);
+      const delta = solarDeclinationRad(N);
+      const eot = equationOfTimeMinutes(N);
+      const dLambda = 4*(zoneMeridian - lon);
+      const t_noon = 12 + (dLambda - eot)/60 + dst;
+      const phi = deg2rad(lat);
+      const h_sr = deg2rad(-0.833);
+      const h_tw = deg2rad(-Math.abs(twilightDeg));
+      const H0 = hourAngleDeg(phi, delta, h_sr);
+      const Htw = hourAngleDeg(phi, delta, h_tw);
+      return {
+        t_ds: t_noon - Htw/15,
+        t_sr: t_noon - H0/15,
+        t_ss: t_noon + H0/15,
+        t_de: t_noon + Htw/15,
+        t_noon,
+        delta
+      };
+    }
+    function sunAltitude(latDeg, delta, Hdeg){
+      const phi = deg2rad(latDeg);
+      const H = deg2rad(Hdeg);
+      return (180/Math.PI)*Math.asin(Math.sin(phi)*Math.sin(delta)+Math.cos(phi)*Math.cos(delta)*Math.cos(H));
+    }
+    function cctNightMax(t, K_min, K_max, t_ds, t_sr, t_ss, t_de){
+      const Delta_m = t_sr - t_ds;
+      const T_tag = t_ss - t_sr;
+      const Delta_e = t_de - t_ss;
+      const C = (K_min + K_max)/2;
+      const A = (K_max - K_min)/2;
+      if(t < t_ds) return K_max;
+      if(t <= t_sr){
+        const u = (t - t_ds) / Delta_m;
+        return C + A * Math.cos(Math.PI*u);
+      }
+      if(t <= t_ss){
+        const u = (t - t_sr) / T_tag;
+        return K_min + (K_max - K_min)*Math.pow(Math.sin(Math.PI*u),2);
+      }
+      if(t < t_de){
+        const u = (t - t_ss) / Delta_e;
+        return C + A * Math.cos(Math.PI*(u-1));
+      }
+      return K_max;
+    }
+    function cctNightMin(t, K_min, K_max, t_ds, t_sr, t_ss, t_de){
+      if(t <= t_sr || t >= t_ss) return K_min;
+      const T_tag = t_ss - t_sr;
+      const u = (t - t_sr) / T_tag;
+      return K_min + (K_max - K_min)*Math.pow(Math.sin(Math.PI*u),2);
+    }
+    function hoursToHHMM(hours){
+      let h = Math.floor(hours);
+      let m = Math.round((hours - h)*60);
+      if(m === 60){ h += 1; m = 0; }
+      h = ((h % 24) + 24) % 24;
+      const hh = String(h).padStart(2,"0");
+      const mm = String(m).padStart(2,"0");
+      return `${hh}:${mm}`;
+    }
+
+    // ----- Wochen-Sequenz-Logik -----
+    let cctChart = null;
+    let weekData = [];   // Array von {date, labels, cctVals, altVals, times}
+    let currentWeekIndex = 0;
+    let playTimer = null;
+
+    const playBtn = document.getElementById("playBtn");
+    const weekSlider = document.getElementById("weekSlider");
+    const seqIndexLabel = document.getElementById("seqIndexLabel");
+    const seqCurrentDate = document.getElementById("seqCurrentDate");
+
+    function initDateDefault(){
+      const el = document.getElementById("date");
+      if(!el.value){
+        const today = new Date();
+        const y = today.getFullYear();
+        const m = String(today.getMonth()+1).padStart(2,"0");
+        const d = String(today.getDate()).padStart(2,"0");
+        el.value = `${y}-${m}-${d}`;
+      }
+    }
+
+    function updateNightModePills(){
+      const row = document.getElementById("nightModeRow");
+      const pills = row.querySelectorAll(".radio-pill");
+      pills.forEach(p => {
+        const input = p.querySelector("input");
+        if(input.checked) p.classList.add("active");
+        else p.classList.remove("active");
+      });
+    }
+
+    function computeWeekData(baseDate, weekIndex, lat, lon, zoneMeridian, dst, twilight, kmin, kmax, nightMode){
+      // Referenztag: Mitte der Woche (z.B. Mittwoch)
+      const date = new Date(baseDate);
+      const offsetDays = weekIndex * 7 + 3; // +3 ~ Mitte der Woche ab Startdatum
+      date.setDate(date.getDate() + offsetDays);
+
+      const times = solarTimes(date, lat, lon, zoneMeridian, dst, twilight);
+      const labels = [];
+      const cctVals = [];
+      const altVals = [];
+      const step = 0.25;
+      for(let t=0; t<=24+1e-9; t+=step){
+        labels.push(t.toFixed(2));
+        const cctVal = (nightMode === "max")
+          ? cctNightMax(t,kmin,kmax,times.t_ds,times.t_sr,times.t_ss,times.t_de)
+          : cctNightMin(t,kmin,kmax,times.t_ds,times.t_sr,times.t_ss,times.t_de);
+        cctVals.push(cctVal);
+        const alt = sunAltitude(lat,times.delta,(t-times.t_noon)*15);
+        altVals.push(alt);
+      }
+      return { date, labels, cctVals, altVals, times };
+    }
+
+    function buildWeekSequence(){
+      const lat = parseFloat(document.getElementById("lat").value);
+      const lon = parseFloat(document.getElementById("lon").value);
+      const zoneMeridian = parseFloat(document.getElementById("zoneMeridian").value);
+      const dst = parseFloat(document.getElementById("dst").value);
+      const twilight = parseFloat(document.getElementById("twilight").value);
+      const kmin = parseFloat(document.getElementById("kmin").value);
+      const kmax = parseFloat(document.getElementById("kmax").value);
+      const dateStr = document.getElementById("date").value;
+      let weeksCount = parseInt(document.getElementById("weeksCount").value, 10);
+      if(!dateStr){
+        alert("Bitte ein Startdatum wählen.");
+        return;
+      }
+      if(!Number.isFinite(weeksCount) || weeksCount < 1) weeksCount = 1;
+      if(weeksCount > 52) weeksCount = 52;
+      document.getElementById("weeksCount").value = String(weeksCount);
+
+      const [year,month,day] = dateStr.split("-").map(Number);
+      const baseDate = new Date(year,month-1,day);
+      const nightMode = document.querySelector("input[name='nightMode']:checked").value;
+
+      weekData = [];
+      for(let i=0; i<weeksCount; i++){
+        weekData.push(computeWeekData(baseDate, i, lat, lon, zoneMeridian, dst, twilight, kmin, kmax, nightMode));
+      }
+
+      weekSlider.min = 0;
+      weekSlider.max = weekData.length - 1;
+      currentWeekIndex = 0;
+      weekSlider.value = "0";
+      updateWeekView();
+    }
+
+    function updateWeekView(){
+      if(weekData.length === 0) return;
+      const entry = weekData[currentWeekIndex];
+      const { date, labels, cctVals, altVals, times } = entry;
+
+      seqCurrentDate.textContent = `Referenztag: ${date.toLocaleDateString("de-DE")}`;
+      seqIndexLabel.textContent = `Woche ${currentWeekIndex+1} / ${weekData.length}`;
+
+      const timesText = [
+        `Datum (Referenztag): ${date.toLocaleDateString("de-DE")}`,
+        `Sonnenmittag:        ${times.t_noon.toFixed(2)} h  (${hoursToHHMM(times.t_noon)})`,
+        `Morgendämmerung:     ${times.t_ds.toFixed(2)} h  (${hoursToHHMM(times.t_ds)})`,
+        `Sonnenaufgang:       ${times.t_sr.toFixed(2)} h  (${hoursToHHMM(times.t_sr)})`,
+        `Sonnenuntergang:     ${times.t_ss.toFixed(2)} h  (${hoursToHHMM(times.t_ss)})`,
+        `Abenddämmerung:      ${times.t_de.toFixed(2)} h  (${hoursToHHMM(times.t_de)})`
+      ].join("\n");
+      document.getElementById("timesOutput").textContent = timesText;
+
+      const ctx = document.getElementById("cctChart").getContext("2d");
+      const nightMode = document.querySelector("input[name='nightMode']:checked").value;
+      const labelC = nightMode === "max"
+        ? "CCT(t) – Nacht = K_max"
+        : "CCT(t) – Nacht = K_min";
+
+      if(cctChart){
+        cctChart.data.labels = labels;
+        cctChart.data.datasets[0].data = cctVals;
+        cctChart.data.datasets[0].label = labelC;
+        cctChart.data.datasets[1].data = altVals;
+        cctChart.update();
+      } else {
+        cctChart = new Chart(ctx, {
+          type: "line",
+          data: {
+            labels,
+            datasets: [
+              {
+                label: labelC,
+                data: cctVals,
+                borderColor: "#E48C2C",
+                borderWidth: 2,
+                pointRadius: 0,
+                yAxisID: "y1",
+                tension: 0.2,
+              },
+              {
+                label: "Sonnenhöhe [°]",
+                data: altVals,
+                borderColor: "#D8C7A0",
+                borderWidth: 1,
+                pointRadius: 0,
+                yAxisID: "y2",
+                tension: 0.15,
+              }
+            ]
+          },
+          options: {
+            responsive: true,
+            plugins: {
+              legend: {
+                position: "bottom",
+                labels: {
+                  boxWidth: 10,
+                  font: { size: 11 },
+                  color: "#555"
+                }
+              },
+              tooltip: {
+                mode: "index",
+                intersect: false,
+                callbacks: {
+                  title: (items) => {
+                    const raw = items[0].label;
+                    const h = parseFloat(raw);
+                    return `t = ${h.toFixed(2)} h  (${hoursToHHMM(h)})`;
+                  }
+                }
+              }
+            },
+            interaction: {
+              mode: "index",
+              intersect: false
+            },
+            scales: {
+              x: {
+                title: { display: true, text: "Zeit [h]" },
+                grid: { display: false },
+                ticks: {
+                  callback: function(value, index, ticks) {
+                    const label = parseFloat(this.getLabelForValue(value));
+                    if (!Number.isFinite(label)) return "";
+                    return label % 2 === 0 ? label.toFixed(0) : "";
+                  },
+                  color: "#777"
+                }
+              },
+              y1: {
+                position: "left",
+                title: { display: true, text: "CCT [K]" },
+                grid: { color: "#f0e5d5" },
+                ticks: { color: "#777" }
+              },
+              y2: {
+                position: "right",
+                title: { display: true, text: "Sonnenhöhe [°]" },
+                grid: { display: false },
+                ticks: { color: "#999" }
+              }
+            }
+          }
+        });
+      }
+    }
+
+    function togglePlay(){
+      if(playTimer){
+        clearInterval(playTimer);
+        playTimer = null;
+        playBtn.textContent = "▶ Sequenz abspielen";
+        return;
+      }
+      if(weekData.length === 0) return;
+      playBtn.textContent = "⏸ Stopp";
+      playTimer = setInterval(() => {
+        if(weekData.length === 0){
+          clearInterval(playTimer);
+          playTimer = null;
+          playBtn.textContent = "▶ Sequenz abspielen";
+          return;
+        }
+        currentWeekIndex = (currentWeekIndex + 1) % weekData.length;
+        weekSlider.value = String(currentWeekIndex);
+        updateWeekView();
+      }, 900);
+    }
+
+    document.getElementById("runBtn").addEventListener("click", () => {
+      updateNightModePills();
+      buildWeekSequence();
+    });
+    document.getElementById("nightModeRow").addEventListener("change", () => {
+      updateNightModePills();
+      buildWeekSequence();
+    });
+    weekSlider.addEventListener("input", () => {
+      if(weekData.length === 0) return;
+      currentWeekIndex = parseInt(weekSlider.value, 10);
+      updateWeekView();
+    });
+    playBtn.addEventListener("click", togglePlay);
+
+    function init(){
+      initDateDefault();
+      updateNightModePills();
+      buildWeekSequence();
+    }
+    init();
+  </script>
+</body>
+</html>

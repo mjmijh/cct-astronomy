@@ -1,0 +1,46 @@
+{
+  "title": "Astronomically Guided CCT",
+  "config": {
+    "step": {
+      "user": {
+        "title": "Set up Astronomically Guided CCT",
+        "description": "Calculates a CCT curve from astronomical times based on your location.",
+        "data": {
+          "name": "Instance name (e.g. Lobby, Foyer, Open Office)",
+          "enabled": "Automation active",
+          "mode": "Mode",
+          "k_min": "K_min [K]",
+          "k_max": "K_max [K]",
+          "twilight_deg": "Twilight angle |h_tw| [°]",
+          "zone_meridian": "Time zone meridian λ₀ [°]",
+          "dim_default": "Default brightness [%]",
+          "transition_night": "Transition night [s]",
+          "transition_dawn": "Transition dawn [s]",
+          "transition_day": "Transition day [s]",
+          "transition_dusk": "Transition dusk [s]"
+        }
+      }
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Configure CCT & Automation",
+        "description": "Adjust the astronomical CCT parameters and transition times.",
+        "data": {
+          "enabled": "Automation active",
+          "mode": "Mode",
+          "k_min": "K_min [K]",
+          "k_max": "K_max [K]",
+          "twilight_deg": "Twilight angle |h_tw| [°]",
+          "zone_meridian": "Time zone meridian λ₀ [°]",
+          "dim_default": "Default brightness [%]",
+          "transition_night": "Transition night [s]",
+          "transition_dawn": "Transition dawn [s]",
+          "transition_day": "Transition day [s]",
+          "transition_dusk": "Transition dusk [s]"
+        }
+      }
+    }
+  }
+}

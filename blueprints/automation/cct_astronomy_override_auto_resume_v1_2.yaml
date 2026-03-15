@@ -1,0 +1,76 @@
+blueprint:
+  name: "CCT Astronomy Override / Auto-Resume v1.2"
+  description: >-
+    Detects manual changes to the selected lights. When the cct_astronomy automation is active,
+    it is disabled on manual intervention (switch.<instance>_automation = off).
+    Optionally, automation can be automatically re-enabled after a configurable delay.
+  domain: automation
+
+  input:
+    automation_switch:
+      name: Automation Switch
+      description: "switch.<instance>_automation from the cct_astronomy integration."
+      selector:
+        entity:
+          domain: switch
+
+    lights:
+      name: Lights (observed)
+      description: "The lights whose manual operation should pause the automation."
+      selector:
+        entity:
+          multiple: true
+          domain: light
+
+    auto_resume:
+      name: Auto Resume
+      description: "When enabled, automation is automatically re-enabled after the configured delay."
+      default: true
+      selector:
+        boolean: {}
+
+    resume_delay_minutes:
+      name: Resume delay (minutes)
+      description: "After this time the automation is optionally re-enabled."
+      default: 60
+      selector:
+        number:
+          min: 1
+          max: 1440
+          step: 1
+          unit_of_measurement: min
+          mode: box
+
+mode: restart
+max_exceeded: silent
+
+trigger:
+  - platform: state
+    entity_id: !input lights
+
+condition:
+  - condition: state
+    entity_id: !input automation_switch
+    state: "on"
+  - condition: template
+    value_template: "{{ trigger.to_state is not none and trigger.to_state.context is not none and trigger.to_state.context.parent_id != this.context.id }}"
+
+variables:
+  do_resume: !input auto_resume
+
+action:
+  - service: switch.turn_off
+    target:
+      entity_id: !input automation_switch
+
+  - choose:
+      - conditions: "{{ do_resume }}"
+        sequence:
+          - delay:
+              minutes: !input resume_delay_minutes
+          - condition: state
+            entity_id: !input automation_switch
+            state: "off"
+          - service: switch.turn_on
+            target:
+              entity_id: !input automation_switch

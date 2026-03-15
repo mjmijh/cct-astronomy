@@ -1,0 +1,142 @@
+blueprint:
+  name: "CCT Astronomy → Lights (Kelvin/Mired/Dim) v1.1"
+  description: >-
+    Connects a cct_astronomy instance (sensors: kelvin/mired/dim + automation switch)
+    to one or more lights. Passes CCT (Kelvin or Mired), Dim (%) and fade time (transition)
+    to light.turn_on. Fade time is read from the sensor attribute "fade_seconds", falling back to the default.
+  domain: automation
+
+  input:
+    automation_switch:
+      name: Automation Switch
+      description: "switch.<instance>_automation from the cct_astronomy integration."
+      selector:
+        entity:
+          domain: switch
+
+    kelvin_sensor:
+      name: Kelvin Sensor
+      description: "sensor.<instance>_kelvin"
+      selector:
+        entity:
+          domain: sensor
+
+    mired_sensor:
+      name: Mired Sensor
+      description: "sensor.<instance>_mired"
+      selector:
+        entity:
+          domain: sensor
+
+    dim_sensor:
+      name: Dim Sensor
+      description: "sensor.<instance>_dim (constant default brightness per instance)"
+      selector:
+        entity:
+          domain: sensor
+
+    lights:
+      name: Lights
+      description: "One or more light entities (groups are supported)."
+      selector:
+        target:
+          entity:
+            domain: light
+
+    use_mired:
+      name: CCT output format
+      description: "When enabled: color_temp (mired). When disabled: color_temp_kelvin."
+      default: false
+      selector:
+        boolean: {}
+
+    apply_dim:
+      name: Apply dim
+      description: "When enabled: brightness is set from the Dim (%) sensor value."
+      default: true
+      selector:
+        boolean: {}
+
+    default_fade_seconds:
+      name: Default fade time (seconds)
+      description: "Fallback value used when fade_seconds is missing from the sensor attribute."
+      default: 300
+      selector:
+        number:
+          min: 0
+          max: 3600
+          step: 1
+          unit_of_measurement: s
+          mode: box
+
+mode: restart
+max_exceeded: silent
+
+trigger:
+  - platform: state
+    entity_id: !input kelvin_sensor
+  - platform: state
+    entity_id: !input mired_sensor
+  - platform: state
+    entity_id: !input dim_sensor
+  - platform: state
+    entity_id: !input automation_switch
+  - platform: time_pattern
+    minutes: "/1"
+
+condition:
+  - condition: state
+    entity_id: !input automation_switch
+    state: "on"
+
+variables:
+  kelvin_entity: !input kelvin_sensor
+  mired_entity: !input mired_sensor
+  dim_entity: !input dim_sensor
+
+  use_mired: !input use_mired
+  apply_dim: !input apply_dim
+  default_fade: !input default_fade_seconds
+
+  v_kelvin: "{{ states(kelvin_entity) | int(0) }}"
+  v_mired: "{{ states(mired_entity) | int(0) }}"
+  v_dim_pct: "{{ states(dim_entity) | float(0) }}"
+  v_brightness: "{{ ((v_dim_pct | max(0) | min(100)) * 2.55) | round(0) | int }}"
+
+  fade_attr: "{{ state_attr(kelvin_entity, 'fade_seconds') }}"
+  v_fade_seconds: "{{ (fade_attr if fade_attr is not none else default_fade) | float(0) | round(0) | int }}"
+
+action:
+  - choose:
+      - conditions: "{{ use_mired and apply_dim }}"
+        sequence:
+          - service: light.turn_on
+            target: !input lights
+            data:
+              transition: "{{ v_fade_seconds }}"
+              color_temp: "{{ v_mired }}"
+              brightness: "{{ v_brightness }}"
+
+      - conditions: "{{ use_mired and (not apply_dim) }}"
+        sequence:
+          - service: light.turn_on
+            target: !input lights
+            data:
+              transition: "{{ v_fade_seconds }}"
+              color_temp: "{{ v_mired }}"
+
+      - conditions: "{{ (not use_mired) and apply_dim }}"
+        sequence:
+          - service: light.turn_on
+            target: !input lights
+            data:
+              transition: "{{ v_fade_seconds }}"
+              color_temp_kelvin: "{{ v_kelvin }}"
+              brightness: "{{ v_brightness }}"
+
+    default:
+      - service: light.turn_on
+        target: !input lights
+        data:
+          transition: "{{ v_fade_seconds }}"
+          color_temp_kelvin: "{{ v_kelvin }}"
