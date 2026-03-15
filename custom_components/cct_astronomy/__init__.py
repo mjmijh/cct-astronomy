@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 from typing import Any, Callable
 
+from homeassistant.components import frontend
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.helpers.typing import ConfigType
@@ -20,6 +21,9 @@ from .const import (
 from .coordinator import CctCoordinator
 
 PLATFORMS: list[str] = ["sensor", "switch"]
+
+_PANEL_URL_PATH = "cct-astronomy"
+_STATIC_URL_PATH = "/cct_astronomy"
 
 def _as_list(value: Any) -> list[str]:
     if value is None:
@@ -98,14 +102,34 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     return True
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
-    # Serve bundled webapp (standalone HTML/assets) via Home Assistant
-    webapp_dir = os.path.join(os.path.dirname(__file__), "www")
-    if os.path.isdir(webapp_dir):
+    hass.data.setdefault(DOMAIN, {})
+
+    # Register static path for the bundled webapp (once per HA process)
+    if not hass.data[DOMAIN].get("static_path_registered"):
+        webapp_dir = os.path.join(os.path.dirname(__file__), "www")
+        if os.path.isdir(webapp_dir):
+            try:
+                hass.http.register_static_path(_STATIC_URL_PATH, webapp_dir, cache_headers=False)
+                hass.data[DOMAIN]["static_path_registered"] = True
+            except Exception:
+                pass
+
+    # Register sidebar panel (once — panels are global, not per entry)
+    if not hass.data[DOMAIN].get("panel_registered"):
         try:
-            hass.http.register_static_path("/cct_astronomy", webapp_dir, cache_headers=False)
+            frontend.async_register_built_in_panel(
+                hass,
+                component_name="iframe",
+                sidebar_title="CCT Astronomy",
+                sidebar_icon="mdi:weather-sunset",
+                frontend_url_path=_PANEL_URL_PATH,
+                config={"url": f"{_STATIC_URL_PATH}/index.html"},
+                require_admin=False,
+            )
+            hass.data[DOMAIN]["panel_registered"] = True
         except Exception:
-            # If HTTP component isn't ready for any reason, we keep the integration functional.
             pass
+
     coordinator = CctCoordinator(hass, entry)
     await coordinator.async_config_entry_first_refresh()
     hass.data[DOMAIN][entry.entry_id] = coordinator
@@ -127,4 +151,14 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
     if unload_ok:
         hass.data[DOMAIN].pop(entry.entry_id, None)
+
+        # Remove panel when the last config entry is removed
+        _meta_keys = {"static_path_registered", "panel_registered"}
+        remaining_entries = [k for k in hass.data[DOMAIN] if k not in _meta_keys]
+        if not remaining_entries and hass.data[DOMAIN].pop("panel_registered", False):
+            try:
+                frontend.async_remove_panel(hass, _PANEL_URL_PATH)
+            except Exception:
+                pass
+
     return unload_ok
