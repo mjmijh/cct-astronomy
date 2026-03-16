@@ -1,7 +1,7 @@
 {
   "domain": "cct_astronomy",
   "name": "Astronomically Guided CCT",
-  "version": "1.6.8",
+  "version": "1.6.9",
   "documentation": "https://github.com/mjmijh/cct-astronomy",
   "issue_tracker": "https://github.com/mjmijh/cct-astronomy/issues",
   "codeowners": [],
