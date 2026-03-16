@@ -1,13 +1,17 @@
 from __future__ import annotations
 
+import logging
 import os
 from typing import Any, Callable
 
 from homeassistant.components import frontend
+from homeassistant.components.http import StaticPathConfig
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.helpers.typing import ConfigType
 from homeassistant.components.light import ATTR_SUPPORTED_COLOR_MODES, ColorMode
+
+_LOGGER = logging.getLogger(__name__)
 
 from .const import (
     DOMAIN,
@@ -109,10 +113,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         webapp_dir = os.path.join(os.path.dirname(__file__), "www")
         if os.path.isdir(webapp_dir):
             try:
-                hass.http.register_static_path(_STATIC_URL_PATH, webapp_dir, cache_headers=False)
+                await hass.http.async_register_static_paths([
+                    StaticPathConfig(_STATIC_URL_PATH, webapp_dir, cache_headers=False)
+                ])
                 hass.data[DOMAIN]["static_path_registered"] = True
-            except Exception:
-                pass
+            except Exception as err:
+                _LOGGER.warning("Could not register static path for webapp: %s", err)
 
     # Register sidebar panel (once — panels are global, not per entry)
     if not hass.data[DOMAIN].get("panel_registered"):
